@@ -1,5 +1,7 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLatestPrices } from "@/hooks/useCommodities";
+import { formatDistanceToNow } from "date-fns";
 
 interface CommodityCardProps {
   name: string;
@@ -7,17 +9,8 @@ interface CommodityCardProps {
   unit: string;
   change: number;
   changePercent: number;
-  icon: string;
+  icon: string | null;
 }
-
-const commodities: CommodityCardProps[] = [
-  { name: "Tomato", price: 45.50, unit: "per kg", change: 3.20, changePercent: 7.56, icon: "🍅" },
-  { name: "Onion", price: 32.00, unit: "per kg", change: -2.50, changePercent: -7.25, icon: "🧅" },
-  { name: "Potato", price: 28.75, unit: "per kg", change: 0.50, changePercent: 1.77, icon: "🥔" },
-  { name: "Carrot", price: 38.00, unit: "per kg", change: 1.80, changePercent: 4.97, icon: "🥕" },
-  { name: "Cabbage", price: 22.50, unit: "per kg", change: -1.20, changePercent: -5.06, icon: "🥬" },
-  { name: "Green Chili", price: 85.00, unit: "per kg", change: 12.00, changePercent: 16.44, icon: "🌶️" },
-];
 
 function CommodityCard({ name, price, unit, change, changePercent, icon }: CommodityCardProps) {
   const isUp = change > 0;
@@ -28,7 +21,7 @@ function CommodityCard({ name, price, unit, change, changePercent, icon }: Commo
     <div className="group relative p-5 rounded-2xl bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
       <div className="flex items-start justify-between mb-4">
         <div className="text-3xl group-hover:scale-110 transition-transform duration-300">
-          {icon}
+          {icon || "🌾"}
         </div>
         <div
           className={cn(
@@ -53,7 +46,7 @@ function CommodityCard({ name, price, unit, change, changePercent, icon }: Commo
         <span className="font-display text-2xl font-bold text-foreground">
           ₹{price.toFixed(2)}
         </span>
-        <span className="text-sm text-muted-foreground">{unit}</span>
+        <span className="text-sm text-muted-foreground">per {unit}</span>
       </div>
 
       <div className="mt-3 pt-3 border-t border-border">
@@ -79,6 +72,12 @@ function CommodityCard({ name, price, unit, change, changePercent, icon }: Commo
 }
 
 export function PriceDashboard() {
+  const { data: commodities, isLoading, error } = useLatestPrices();
+
+  const lastUpdated = commodities?.[0]?.recordedAt
+    ? formatDistanceToNow(new Date(commodities[0].recordedAt), { addSuffix: true })
+    : "recently";
+
   return (
     <section id="dashboard" className="py-20 bg-muted/30">
       <div className="container px-4">
@@ -88,7 +87,7 @@ export function PriceDashboard() {
             Live Market Prices
           </h2>
           <p className="text-muted-foreground">
-            Real-time commodity prices updated every 15 minutes from major agricultural markets.
+            Real-time commodity prices updated from major agricultural markets across India.
           </p>
         </div>
 
@@ -97,22 +96,52 @@ export function PriceDashboard() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm">
             <span className="flex h-2 w-2 rounded-full bg-price-up animate-pulse" />
             <span className="text-muted-foreground">Last updated:</span>
-            <span className="font-medium text-foreground">2 minutes ago</span>
+            <span className="font-medium text-foreground">{lastUpdated}</span>
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-20">
+            <p className="text-destructive">Failed to load prices. Please try again.</p>
+          </div>
+        )}
+
         {/* Commodity Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {commodities.map((commodity, index) => (
-            <div
-              key={commodity.name}
-              className="animate-slide-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <CommodityCard {...commodity} />
-            </div>
-          ))}
-        </div>
+        {commodities && commodities.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {commodities.map((commodity, index) => (
+              <div
+                key={commodity.id}
+                className="animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <CommodityCard
+                  name={commodity.name}
+                  price={commodity.price}
+                  unit={commodity.unit}
+                  change={commodity.change}
+                  changePercent={commodity.changePercent}
+                  icon={commodity.icon}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {commodities && commodities.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground">No commodities available yet.</p>
+          </div>
+        )}
 
         {/* View All Link */}
         <div className="flex justify-center mt-10">
