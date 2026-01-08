@@ -14,7 +14,405 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          language: string | null
+          title: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          audio_url: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          audio_url?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          audio_url?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commodities: {
+        Row: {
+          category: string
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          name_hi: string | null
+          name_ta: string | null
+          name_te: string | null
+          unit: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          name_hi?: string | null
+          name_ta?: string | null
+          name_te?: string | null
+          unit?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          name_hi?: string | null
+          name_ta?: string | null
+          name_te?: string | null
+          unit?: string
+        }
+        Relationships: []
+      }
+      mandi_arbitrage: {
+        Row: {
+          calculated_at: string
+          commodity_id: string
+          destination_mandi: string
+          destination_price: number
+          distance_km: number | null
+          id: string
+          price_difference: number
+          profit_potential: number | null
+          source_mandi: string
+          source_price: number
+          transport_cost_estimate: number | null
+        }
+        Insert: {
+          calculated_at?: string
+          commodity_id: string
+          destination_mandi: string
+          destination_price: number
+          distance_km?: number | null
+          id?: string
+          price_difference: number
+          profit_potential?: number | null
+          source_mandi: string
+          source_price: number
+          transport_cost_estimate?: number | null
+        }
+        Update: {
+          calculated_at?: string
+          commodity_id?: string
+          destination_mandi?: string
+          destination_price?: number
+          distance_km?: number | null
+          id?: string
+          price_difference?: number
+          profit_potential?: number | null
+          source_mandi?: string
+          source_price?: number
+          transport_cost_estimate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mandi_arbitrage_commodity_id_fkey"
+            columns: ["commodity_id"]
+            isOneToOne: false
+            referencedRelation: "commodities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_news: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          published_at: string
+          source: string | null
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string
+          source?: string | null
+          title: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string
+          source?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      marketplace_listings: {
+        Row: {
+          commodity_id: string
+          created_at: string
+          description: string | null
+          harvest_date: string | null
+          id: string
+          images: string[] | null
+          is_available: boolean | null
+          location: string
+          price_per_unit: number
+          quality_grade: string | null
+          quantity: number
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          commodity_id: string
+          created_at?: string
+          description?: string | null
+          harvest_date?: string | null
+          id?: string
+          images?: string[] | null
+          is_available?: boolean | null
+          location: string
+          price_per_unit: number
+          quality_grade?: string | null
+          quantity: number
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          commodity_id?: string
+          created_at?: string
+          description?: string | null
+          harvest_date?: string | null
+          id?: string
+          images?: string[] | null
+          is_available?: boolean | null
+          location?: string
+          price_per_unit?: number
+          quality_grade?: string | null
+          quantity?: number
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_commodity_id_fkey"
+            columns: ["commodity_id"]
+            isOneToOne: false
+            referencedRelation: "commodities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      predictions: {
+        Row: {
+          commodity_id: string
+          confidence_score: number | null
+          created_at: string
+          id: string
+          model_version: string | null
+          predicted_price: number
+          prediction_date: string
+          prediction_horizon: string | null
+        }
+        Insert: {
+          commodity_id: string
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          model_version?: string | null
+          predicted_price: number
+          prediction_date: string
+          prediction_horizon?: string | null
+        }
+        Update: {
+          commodity_id?: string
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          model_version?: string | null
+          predicted_price?: number
+          prediction_date?: string
+          prediction_horizon?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_commodity_id_fkey"
+            columns: ["commodity_id"]
+            isOneToOne: false
+            referencedRelation: "commodities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_alerts: {
+        Row: {
+          alert_type: string
+          commodity_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          threshold_price: number
+          triggered_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          commodity_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          threshold_price: number
+          triggered_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          commodity_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          threshold_price?: number
+          triggered_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_alerts_commodity_id_fkey"
+            columns: ["commodity_id"]
+            isOneToOne: false
+            referencedRelation: "commodities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_data: {
+        Row: {
+          commodity_id: string
+          id: string
+          mandi_location: string | null
+          mandi_name: string
+          price: number
+          recorded_at: string
+          source: string | null
+          state: string | null
+        }
+        Insert: {
+          commodity_id: string
+          id?: string
+          mandi_location?: string | null
+          mandi_name: string
+          price: number
+          recorded_at?: string
+          source?: string | null
+          state?: string | null
+        }
+        Update: {
+          commodity_id?: string
+          id?: string
+          mandi_location?: string | null
+          mandi_name?: string
+          price?: number
+          recorded_at?: string
+          source?: string | null
+          state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_data_commodity_id_fkey"
+            columns: ["commodity_id"]
+            isOneToOne: false
+            referencedRelation: "commodities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          location: string | null
+          phone: string | null
+          preferred_language: string | null
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          preferred_language?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          preferred_language?: string | null
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
