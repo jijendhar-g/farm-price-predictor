@@ -4,6 +4,8 @@ import { PriceDashboard } from "@/components/sections/PriceDashboard";
 import { PredictionChart } from "@/components/sections/PredictionChart";
 import { ChatbotSection } from "@/components/sections/ChatbotSection";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
+import { MarketplaceSection } from "@/components/sections/MarketplaceSection";
+import { PriceAlertsSection } from "@/components/sections/PriceAlertsSection";
 import { Footer } from "@/components/layout/Footer";
 
 const Index = () => {
@@ -14,6 +16,8 @@ const Index = () => {
         <HeroSection />
         <PriceDashboard />
         <PredictionChart />
+        <MarketplaceSection />
+        <PriceAlertsSection />
         <FeaturesSection />
         <ChatbotSection />
       </main>

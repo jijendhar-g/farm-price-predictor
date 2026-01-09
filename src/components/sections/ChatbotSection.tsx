@@ -1,23 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Bot, User, Sparkles, Mic, Languages } from "lucide-react";
+import { Send, Bot, User, Sparkles, RefreshCw, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Message {
-  id: number;
-  type: "user" | "bot";
-  content: string;
-  timestamp: Date;
-}
-
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    type: "bot",
-    content: "👋 Hello! I'm your AgriPrice AI Assistant. I can help you with:\n\n• Current vegetable prices\n• Price predictions and trends\n• Storage and selling tips\n• Market insights\n\nHow can I assist you today?",
-    timestamp: new Date(),
-  },
-];
+import { useAIChat } from "@/hooks/useAIChat";
+import { toast } from "sonner";
 
 const quickPrompts = [
   "What's the price of tomatoes today?",
@@ -27,9 +13,8 @@ const quickPrompts = [
 ];
 
 export function ChatbotSection() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const { messages, isLoading, error, sendMessage, clearMessages } = useAIChat();
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -40,49 +25,18 @@ export function ChatbotSection() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const handleSend = async (text?: string) => {
     const messageText = text || inputValue;
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || isLoading) return;
 
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now(),
-      type: "user",
-      content: messageText,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    setIsTyping(true);
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponses: { [key: string]: string } = {
-        "tomato": "🍅 **Current Tomato Prices**\n\n• Local Market: ₹45.50/kg\n• Wholesale: ₹38.00/kg\n• Retail: ₹52.00/kg\n\n📈 **Trend**: Prices are expected to rise by 8% over the next week due to seasonal demand.\n\n💡 **Tip**: Consider selling within 3-4 days for best returns.",
-        "onion": "🧅 **Onion Market Update**\n\n• Current Price: ₹32.00/kg\n• Weekly Change: -7.25%\n\n📊 **Prediction**: Our LSTM model forecasts prices to stabilize around ₹35/kg next week.\n\n⚠️ **Advisory**: Storage conditions are crucial. Maintain cool, dry conditions to prevent spoilage.",
-        "predict": "📈 **Price Prediction Summary**\n\n| Commodity | Current | Next Week |\n|-----------|---------|----------|\n| Tomato | ₹45.50 | ₹49.00 (+7.7%) |\n| Onion | ₹32.00 | ₹35.00 (+9.4%) |\n| Potato | ₹28.75 | ₹31.00 (+7.8%) |\n\n🎯 Model Confidence: 95.2%",
-        "potato": "🥔 **Potato Market Analysis**\n\n• Current Price: ₹28.75/kg\n• 30-Day Average: ₹27.50/kg\n\n📅 **Best Selling Time**: Based on historical data, prices peak in mid-monsoon season. Consider holding stock if storage permits.",
-        "market": "📊 **Market Insights - Today**\n\n✅ **Bullish**: Green Chili (+16.4%), Tomato (+7.6%)\n🔻 **Bearish**: Cabbage (-5.1%), Onion (-7.3%)\n➡️ **Stable**: Carrot, Potato\n\n🌦️ **Weather Impact**: Upcoming rain may affect supply chains in southern regions.\n\n💰 **Tip**: Diversify your crops to hedge against price volatility.",
-      };
-
-      let response = "I understand you're asking about agricultural prices. Let me help you with specific information. Try asking about:\n\n• Specific vegetable prices (tomato, onion, potato)\n• Price predictions\n• Market insights\n• Storage tips";
-
-      const lowerText = messageText.toLowerCase();
-      if (lowerText.includes("tomato")) response = botResponses.tomato;
-      else if (lowerText.includes("onion")) response = botResponses.onion;
-      else if (lowerText.includes("predict")) response = botResponses.predict;
-      else if (lowerText.includes("potato")) response = botResponses.potato;
-      else if (lowerText.includes("market") || lowerText.includes("insight")) response = botResponses.market;
-
-      const botMessage: Message = {
-        id: Date.now(),
-        type: "bot",
-        content: response,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1500);
+    await sendMessage(messageText);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -99,13 +53,13 @@ export function ChatbotSection() {
         <div className="max-w-2xl mx-auto text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border border-primary/20 mb-6">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">NLP-Powered</span>
+            <span className="text-sm font-medium text-primary">AI-Powered</span>
           </div>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
             AI Market Assistant
           </h2>
           <p className="text-muted-foreground">
-            Ask questions in natural language. Get real-time prices, predictions, and expert advice powered by advanced NLP.
+            Ask questions in natural language. Get real-time prices, predictions, and expert advice powered by advanced AI.
           </p>
         </div>
 
@@ -122,11 +76,14 @@ export function ChatbotSection() {
                   <h3 className="font-display font-semibold text-foreground">AgriPrice AI</h3>
                   <div className="flex items-center gap-1.5">
                     <span className="flex h-2 w-2 rounded-full bg-price-up animate-pulse" />
-                    <span className="text-xs text-muted-foreground">Online • Multilingual</span>
+                    <span className="text-xs text-muted-foreground">Online • Powered by AI</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="iconSm" onClick={clearMessages} title="Clear chat">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="iconSm">
                   <Languages className="h-4 w-4" />
                 </Button>
@@ -135,23 +92,44 @@ export function ChatbotSection() {
 
             {/* Messages Container */}
             <div className="h-[400px] overflow-y-auto p-6 space-y-4">
-              {messages.map((message) => (
+              {/* Welcome message */}
+              {messages.length === 0 && (
+                <div className="flex gap-3 animate-fade-in">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
+                    <Bot className="h-4 w-4" />
+                  </div>
+                  <div className="max-w-[80%] rounded-2xl rounded-tl-none bg-muted text-foreground px-4 py-3 text-sm">
+                    <div className="whitespace-pre-wrap">
+                      👋 Hello! I'm your AgriPrice AI Assistant. I can help you with:
+
+• Current vegetable prices from mandis
+• AI-powered price predictions
+• Storage and selling tips
+• Market insights and trends
+
+How can I assist you today?
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {messages.map((message, index) => (
                 <div
-                  key={message.id}
+                  key={index}
                   className={cn(
                     "flex gap-3 animate-fade-in",
-                    message.type === "user" ? "flex-row-reverse" : ""
+                    message.role === "user" ? "flex-row-reverse" : ""
                   )}
                 >
                   <div
                     className={cn(
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                      message.type === "user"
+                      message.role === "user"
                         ? "bg-secondary text-secondary-foreground"
                         : "bg-gradient-primary text-primary-foreground"
                     )}
                   >
-                    {message.type === "user" ? (
+                    {message.role === "user" ? (
                       <User className="h-4 w-4" />
                     ) : (
                       <Bot className="h-4 w-4" />
@@ -160,28 +138,17 @@ export function ChatbotSection() {
                   <div
                     className={cn(
                       "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
-                      message.type === "user"
+                      message.role === "user"
                         ? "bg-primary text-primary-foreground rounded-tr-none"
                         : "bg-muted text-foreground rounded-tl-none"
                     )}
                   >
                     <div className="whitespace-pre-wrap">{message.content}</div>
-                    <p
-                      className={cn(
-                        "text-[10px] mt-2 opacity-60",
-                        message.type === "user" ? "text-right" : ""
-                      )}
-                    >
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
                   </div>
                 </div>
               ))}
 
-              {isTyping && (
+              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
                 <div className="flex gap-3 animate-fade-in">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
                     <Bot className="h-4 w-4" />
@@ -206,7 +173,8 @@ export function ChatbotSection() {
                   <button
                     key={index}
                     onClick={() => handleSend(prompt)}
-                    className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card border border-border rounded-full hover:border-primary/30 hover:text-foreground transition-colors"
+                    disabled={isLoading}
+                    className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card border border-border rounded-full hover:border-primary/30 hover:text-foreground transition-colors disabled:opacity-50"
                   >
                     {prompt}
                   </button>
@@ -223,22 +191,16 @@ export function ChatbotSection() {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask about prices, predictions, or get advice..."
-                    className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[48px] max-h-[120px]"
+                    className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[48px] max-h-[120px]"
                     rows={1}
+                    disabled={isLoading}
                   />
-                  <Button
-                    variant="ghost"
-                    size="iconSm"
-                    className="absolute right-2 bottom-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Mic className="h-4 w-4" />
-                  </Button>
                 </div>
                 <Button
                   variant="hero"
                   size="icon"
                   onClick={() => handleSend()}
-                  disabled={!inputValue.trim() || isTyping}
+                  disabled={!inputValue.trim() || isLoading}
                 >
                   <Send className="h-4 w-4" />
                 </Button>
