@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, MapPin, Package, Loader2, ShoppingBag } from "lucide-react";
+import { Plus, MapPin, Package, Loader2, ShoppingBag, Sparkles, Star } from "lucide-react";
 import { useCommodities } from "@/hooks/useCommodities";
 
 interface Listing {
@@ -97,44 +97,60 @@ export function MarketplaceSection() {
     createListing.mutate();
   };
 
+  const getGradeColor = (grade: string | null) => {
+    switch (grade) {
+      case "A+": return "from-amber-400 to-orange-500";
+      case "A": return "from-emerald-400 to-teal-500";
+      case "B": return "from-blue-400 to-indigo-500";
+      default: return "from-slate-400 to-slate-500";
+    }
+  };
+
   return (
-    <section id="marketplace" className="py-20">
-      <div className="container px-4">
+    <section id="marketplace" className="py-24 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+      <div className="absolute top-1/3 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/3 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+
+      <div className="container px-4 relative z-10">
         {/* Section Header */}
         <div className="max-w-2xl mx-auto text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border border-primary/20 mb-6">
-            <ShoppingBag className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Farmer Marketplace</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 mb-6">
+            <ShoppingBag className="h-4 w-4 text-emerald-500" />
+            <span className="text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">Farmer Marketplace</span>
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Buy & Sell Fresh Produce
+          <h2 className="font-display text-4xl sm:text-5xl font-bold mb-6">
+            <span className="text-foreground">Buy & Sell </span>
+            <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">Fresh Produce</span>
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Connect directly with farmers and traders. List your produce or find the best deals in your area.
           </p>
         </div>
 
         {/* Create Listing Button */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-12">
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button variant="hero" size="lg" className="gap-2">
+              <Button variant="hero" size="lg" className="gap-3 shadow-lg shadow-primary/30 px-8">
                 <Plus className="h-5 w-5" />
                 List Your Produce
+                <Sparkles className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md rounded-2xl">
               <DialogHeader>
-                <DialogTitle>Create New Listing</DialogTitle>
+                <DialogTitle className="font-display text-xl">Create New Listing</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Commodity</label>
+                  <label className="text-sm font-semibold mb-2 block">Commodity</label>
                   <Select
                     value={formData.commodity_id}
                     onValueChange={(value) => setFormData({ ...formData, commodity_id: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Select commodity" />
                     </SelectTrigger>
                     <SelectContent>
@@ -149,69 +165,73 @@ export function MarketplaceSection() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Quantity (kg)</label>
+                    <label className="text-sm font-semibold mb-2 block">Quantity (kg)</label>
                     <Input
                       type="number"
                       placeholder="e.g., 100"
                       value={formData.quantity}
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                       required
+                      className="rounded-xl"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Price per kg (₹)</label>
+                    <label className="text-sm font-semibold mb-2 block">Price per kg (₹)</label>
                     <Input
                       type="number"
                       placeholder="e.g., 45"
                       value={formData.price_per_unit}
                       onChange={(e) => setFormData({ ...formData, price_per_unit: e.target.value })}
                       required
+                      className="rounded-xl"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Location</label>
+                  <label className="text-sm font-semibold mb-2 block">Location</label>
                   <Input
                     placeholder="e.g., Azadpur, Delhi"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     required
+                    className="rounded-xl"
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Quality Grade</label>
+                  <label className="text-sm font-semibold mb-2 block">Quality Grade</label>
                   <Select
                     value={formData.quality_grade}
                     onValueChange={(value) => setFormData({ ...formData, quality_grade: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A+">A+ (Premium)</SelectItem>
-                      <SelectItem value="A">A (Excellent)</SelectItem>
-                      <SelectItem value="B">B (Good)</SelectItem>
-                      <SelectItem value="C">C (Fair)</SelectItem>
+                      <SelectItem value="A+">⭐ A+ (Premium)</SelectItem>
+                      <SelectItem value="A">🌟 A (Excellent)</SelectItem>
+                      <SelectItem value="B">✨ B (Good)</SelectItem>
+                      <SelectItem value="C">💫 C (Fair)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Description (optional)</label>
+                  <label className="text-sm font-semibold mb-2 block">Description (optional)</label>
                   <Textarea
                     placeholder="Add details about freshness, harvest date, etc."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
+                    className="rounded-xl"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   variant="hero"
-                  className="w-full"
+                  className="w-full rounded-xl h-12"
                   disabled={createListing.isPending}
                 >
                   {createListing.isPending ? (
@@ -230,53 +250,67 @@ export function MarketplaceSection() {
 
         {/* Listings Grid */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 animate-pulse" />
+              <Loader2 className="absolute inset-0 m-auto h-8 w-8 animate-spin text-emerald-500" />
+            </div>
+            <p className="text-muted-foreground">Loading marketplace...</p>
           </div>
         ) : listings && listings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {listings.map((listing, index) => (
               <Card
                 key={listing.id}
-                className="group hover:shadow-md transition-all duration-300 hover:-translate-y-1 animate-slide-up"
+                className="group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 animate-slide-up bg-card/80 backdrop-blur-sm border-border/50 rounded-2xl overflow-hidden"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
+                {/* Top gradient bar */}
+                <div className={`h-1.5 bg-gradient-to-r ${getGradeColor(listing.quality_grade)}`} />
+                
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="text-3xl">{listing.commodities?.icon || "🌾"}</div>
-                    <Badge variant={listing.quality_grade === "A+" ? "default" : "secondary"}>
-                      Grade {listing.quality_grade}
+                    <div className="text-4xl group-hover:scale-110 transition-transform duration-300">
+                      {listing.commodities?.icon || "🌾"}
+                    </div>
+                    <Badge 
+                      className={`bg-gradient-to-r ${getGradeColor(listing.quality_grade)} text-white border-0 shadow-lg`}
+                    >
+                      <Star className="h-3 w-3 mr-1" />
+                      {listing.quality_grade}
                     </Badge>
                   </div>
-                  <CardTitle className="text-lg">{listing.commodities?.name}</CardTitle>
+                  <CardTitle className="text-xl font-display">{listing.commodities?.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-primary">
+                    <span className="text-3xl font-bold text-gradient-primary">
                       ₹{listing.price_per_unit}
                     </span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground font-medium">
                       per {listing.commodities?.unit}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Package className="h-4 w-4" />
-                    <span>{listing.quantity} {listing.commodities?.unit} available</span>
-                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Package className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{listing.quantity} {listing.commodities?.unit} available</span>
+                    </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span className="truncate">{listing.location}</span>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4 text-secondary" />
+                      <span className="truncate">{listing.location}</span>
+                    </div>
                   </div>
 
                   {listing.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground line-clamp-2 pt-2 border-t border-border/50">
                       {listing.description}
                     </p>
                   )}
 
-                  <Button variant="outline" className="w-full mt-2">
+                  <Button variant="outline" className="w-full rounded-xl mt-4 hover:bg-primary/5 hover:border-primary/30 hover:text-primary">
                     Contact Seller
                   </Button>
                 </CardContent>
@@ -284,9 +318,10 @@ export function MarketplaceSection() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <ShoppingBag className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <p className="text-muted-foreground">No listings available yet. Be the first to list!</p>
+          <div className="text-center py-20 bg-card/50 rounded-3xl border border-border/50">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-lg text-muted-foreground mb-4">No listings available yet.</p>
+            <p className="text-sm text-muted-foreground">Be the first to list your produce!</p>
           </div>
         )}
       </div>

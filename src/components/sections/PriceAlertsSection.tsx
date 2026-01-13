@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Bell, Plus, Trash2, Loader2, TrendingUp, TrendingDown } from "lucide-react";
+import { Bell, Plus, Trash2, Loader2, TrendingUp, TrendingDown, Zap } from "lucide-react";
 import { useCommodities } from "@/hooks/useCommodities";
 import { cn } from "@/lib/utils";
 
@@ -116,43 +116,51 @@ export function PriceAlertsSection() {
   };
 
   return (
-    <section id="alerts" className="py-20 bg-muted/30">
-      <div className="container px-4">
+    <section id="alerts" className="py-24 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-muted/30" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl" />
+
+      <div className="container px-4 relative z-10">
         {/* Section Header */}
         <div className="max-w-2xl mx-auto text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border border-primary/20 mb-6">
-            <Bell className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Price Alerts</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 mb-6">
+            <Bell className="h-4 w-4 text-amber-500" />
+            <span className="text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">Smart Alerts</span>
+            <Zap className="h-4 w-4 text-orange-500" />
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Never Miss a Price Move
+          <h2 className="font-display text-4xl sm:text-5xl font-bold mb-6">
+            <span className="text-foreground">Never Miss a </span>
+            <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">Price Move</span>
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Set alerts to get notified when commodity prices reach your target levels. Sell high, buy low.
           </p>
         </div>
 
         {/* Create Alert Button */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-12">
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button variant="hero" size="lg" className="gap-2">
+              <Button variant="hero" size="lg" className="gap-3 shadow-lg shadow-primary/30 px-8">
                 <Plus className="h-5 w-5" />
                 Create Alert
+                <Bell className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md rounded-2xl">
               <DialogHeader>
-                <DialogTitle>Create Price Alert</DialogTitle>
+                <DialogTitle className="font-display text-xl">Create Price Alert</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Commodity</label>
+                  <label className="text-sm font-semibold mb-2 block">Commodity</label>
                   <Select
                     value={formData.commodity_id}
                     onValueChange={(value) => setFormData({ ...formData, commodity_id: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Select commodity" />
                     </SelectTrigger>
                     <SelectContent>
@@ -166,24 +174,24 @@ export function PriceAlertsSection() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Alert Type</label>
+                  <label className="text-sm font-semibold mb-2 block">Alert Type</label>
                   <Select
                     value={formData.alert_type}
                     onValueChange={(value) => setFormData({ ...formData, alert_type: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="above">
                         <span className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-price-up" />
+                          <TrendingUp className="h-4 w-4 text-emerald-500" />
                           Price goes above
                         </span>
                       </SelectItem>
                       <SelectItem value="below">
                         <span className="flex items-center gap-2">
-                          <TrendingDown className="h-4 w-4 text-price-down" />
+                          <TrendingDown className="h-4 w-4 text-rose-500" />
                           Price goes below
                         </span>
                       </SelectItem>
@@ -192,20 +200,21 @@ export function PriceAlertsSection() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Target Price (₹ per kg)</label>
+                  <label className="text-sm font-semibold mb-2 block">Target Price (₹ per kg)</label>
                   <Input
                     type="number"
                     placeholder="e.g., 50"
                     value={formData.threshold_price}
                     onChange={(e) => setFormData({ ...formData, threshold_price: e.target.value })}
                     required
+                    className="rounded-xl"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   variant="hero"
-                  className="w-full"
+                  className="w-full rounded-xl h-12"
                   disabled={createAlert.isPending}
                 >
                   {createAlert.isPending ? (
@@ -224,8 +233,12 @@ export function PriceAlertsSection() {
 
         {/* Alerts List */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full border-4 border-amber-500/20 animate-pulse" />
+              <Loader2 className="absolute inset-0 m-auto h-8 w-8 animate-spin text-amber-500" />
+            </div>
+            <p className="text-muted-foreground">Loading alerts...</p>
           </div>
         ) : alerts && alerts.length > 0 ? (
           <div className="max-w-2xl mx-auto space-y-4">
@@ -233,24 +246,31 @@ export function PriceAlertsSection() {
               <Card
                 key={alert.id}
                 className={cn(
-                  "animate-slide-up",
+                  "animate-slide-up bg-card/80 backdrop-blur-sm rounded-2xl border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg",
                   !alert.is_active && "opacity-60"
                 )}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <CardContent className="flex items-center justify-between p-4">
+                {/* Top gradient line based on alert type */}
+                <div className={cn(
+                  "h-1",
+                  alert.alert_type === "above" 
+                    ? "bg-gradient-to-r from-emerald-400 to-teal-500" 
+                    : "bg-gradient-to-r from-rose-400 to-pink-500"
+                )} />
+                
+                <CardContent className="flex items-center justify-between p-5">
                   <div className="flex items-center gap-4">
-                    <div className="text-2xl">{alert.commodities?.icon || "🌾"}</div>
+                    <div className="text-3xl">{alert.commodities?.icon || "🌾"}</div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{alert.commodities?.name}</span>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-display font-bold text-lg">{alert.commodities?.name}</span>
                         <Badge
-                          variant={alert.alert_type === "above" ? "default" : "secondary"}
                           className={cn(
-                            "text-xs",
+                            "text-xs font-semibold border-0",
                             alert.alert_type === "above"
-                              ? "bg-price-up/10 text-price-up border-price-up/20"
-                              : "bg-price-down/10 text-price-down border-price-down/20"
+                              ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-600"
+                              : "bg-gradient-to-r from-rose-500/20 to-pink-500/20 text-rose-600"
                           )}
                         >
                           {alert.alert_type === "above" ? (
@@ -262,23 +282,24 @@ export function PriceAlertsSection() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Target: ₹{alert.threshold_price} per {alert.commodities?.unit}
+                        Target: <span className="font-bold text-foreground">₹{alert.threshold_price}</span> per {alert.commodities?.unit}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <Switch
                       checked={alert.is_active}
                       onCheckedChange={(checked) =>
                         toggleAlert.mutate({ id: alert.id, isActive: checked })
                       }
+                      className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-primary data-[state=checked]:to-secondary"
                     />
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => deleteAlert.mutate(alert.id)}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -288,11 +309,12 @@ export function PriceAlertsSection() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <Bell className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              No alerts yet. Create your first price alert to get started!
+          <div className="text-center py-20 bg-card/50 rounded-3xl border border-border/50 max-w-2xl mx-auto">
+            <Bell className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-lg text-muted-foreground mb-4">
+              No alerts yet.
             </p>
+            <p className="text-sm text-muted-foreground">Create your first price alert to get started!</p>
           </div>
         )}
       </div>
