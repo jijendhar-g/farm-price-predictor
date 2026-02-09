@@ -1,8 +1,11 @@
-import { Newspaper, Clock, ExternalLink, TrendingUp, Leaf, AlertCircle } from "lucide-react";
+import { Newspaper, Clock, ExternalLink, TrendingUp, Leaf, AlertCircle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2 } from "lucide-react";
+import { useRealtimeNews } from "@/hooks/useRealtimeData";
+import { LiveIndicator } from "@/components/ui/LiveIndicator";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Fallback mock news for when database is empty
 const fallbackNews = [
@@ -62,8 +65,32 @@ function getCategoryColor(category: string | null) {
   }
 }
 
+function NewsCardSkeleton({ large = false }: { large?: boolean }) {
+  return (
+    <div className={`card-interactive p-5 ${large ? "md:col-span-2" : ""}`}>
+      <div className="flex items-start gap-4">
+        <Skeleton className="h-10 w-10 rounded-lg" />
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Skeleton className="h-5 w-16 rounded" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className={`h-6 ${large ? "w-3/4" : "w-full"} mb-2`} />
+          <Skeleton className="h-4 w-full mb-1" />
+          <Skeleton className="h-4 w-2/3 mb-3" />
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MarketNewsSection() {
-  const { data: news, isLoading } = useQuery({
+  const { lastUpdate } = useRealtimeNews();
+  const { data: news, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["market_news"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -82,7 +109,6 @@ export function MarketNewsSection() {
   return (
     <section id="news" className="py-16">
       <div className="container px-4">
-        {/* Section Header */}
         <div className="section-header">
           <div className="badge-secondary mb-4">
             <Newspaper className="h-4 w-4" />
@@ -92,11 +118,25 @@ export function MarketNewsSection() {
           <p className="section-description">
             Stay updated with market trends, policy changes, and agricultural developments
           </p>
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <LiveIndicator lastUpdate={lastUpdate} />
+            <button 
+              onClick={() => refetch()}
+              className="p-2 hover:bg-muted rounded-full transition-colors"
+              disabled={isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
 
+        {/* Loading State with Skeletons */}
         {isLoading && (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <NewsCardSkeleton large />
+            {[...Array(3)].map((_, i) => (
+              <NewsCardSkeleton key={i} />
+            ))}
           </div>
         )}
 

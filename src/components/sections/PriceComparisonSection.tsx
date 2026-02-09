@@ -1,10 +1,36 @@
-import { Scale, TrendingUp, TrendingDown, MapPin, ArrowRight } from "lucide-react";
+import { Scale, TrendingUp, TrendingDown, MapPin, ArrowRight, RefreshCw } from "lucide-react";
 import { usePriceData, useCommodities } from "@/hooks/useCommodities";
+import { useRealtimePriceData } from "@/hooks/useRealtimeData";
+import { LiveIndicator } from "@/components/ui/LiveIndicator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
+
+function ComparisonCardSkeleton() {
+  return (
+    <div className="card-elevated p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <Skeleton className="h-8 w-8" />
+        <div>
+          <Skeleton className="h-5 w-24 mb-1" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+      </div>
+      <div className="space-y-3 mb-4">
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-16 w-full rounded-lg" />
+      </div>
+      <div className="pt-3 border-t border-border flex items-center justify-between">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+    </div>
+  );
+}
 
 export function PriceComparisonSection() {
   const { data: commodities, isLoading: commoditiesLoading } = useCommodities();
-  const { data: priceData, isLoading: priceLoading } = usePriceData();
+  const { data: priceData, isLoading: priceLoading, refetch, isFetching } = usePriceData();
+  const { lastUpdate } = useRealtimePriceData();
 
   const isLoading = commoditiesLoading || priceLoading;
 
@@ -37,7 +63,6 @@ export function PriceComparisonSection() {
   return (
     <section id="comparison" className="py-16 bg-muted/30">
       <div className="container px-4">
-        {/* Section Header */}
         <div className="section-header">
           <div className="badge-primary mb-4">
             <Scale className="h-4 w-4" />
@@ -47,11 +72,24 @@ export function PriceComparisonSection() {
           <p className="section-description">
             Find arbitrage opportunities by comparing prices across different markets
           </p>
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <LiveIndicator lastUpdate={lastUpdate} />
+            <button 
+              onClick={() => refetch()}
+              className="p-2 hover:bg-muted rounded-full transition-colors"
+              disabled={isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
 
+        {/* Loading State with Skeletons */}
         {isLoading && (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <ComparisonCardSkeleton key={i} />
+            ))}
           </div>
         )}
 

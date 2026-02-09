@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { Brain, TrendingUp, TrendingDown, Loader2, Calendar } from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, Loader2, Calendar, RefreshCw } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useCommodities, usePredictions, usePriceData } from "@/hooks/useCommodities";
+import { useRealtimePredictions } from "@/hooks/useRealtimeData";
+import { LiveIndicator } from "@/components/ui/LiveIndicator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 export function PredictionChart() {
   const [selectedCommodity, setSelectedCommodity] = useState<string>("");
   
   const { data: commodities, isLoading: commoditiesLoading } = useCommodities();
-  const { data: predictions, isLoading: predictionsLoading } = usePredictions(selectedCommodity);
+  const { data: predictions, isLoading: predictionsLoading, refetch: refetchPredictions } = usePredictions(selectedCommodity);
   const { data: priceData, isLoading: priceLoading } = usePriceData(selectedCommodity);
+  const { lastUpdate } = useRealtimePredictions();
 
   const isLoading = commoditiesLoading || predictionsLoading || priceLoading;
 
@@ -51,6 +55,9 @@ export function PredictionChart() {
           <p className="section-description">
             LSTM neural network predictions for smarter trading decisions
           </p>
+          <div className="flex justify-center mt-4">
+            <LiveIndicator lastUpdate={lastUpdate} />
+          </div>
         </div>
 
         <div className="max-w-5xl mx-auto">
