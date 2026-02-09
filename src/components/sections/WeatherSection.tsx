@@ -1,4 +1,4 @@
-import { Cloud, Droplets, Wind, Sun, Thermometer, CloudRain } from "lucide-react";
+import { Cloud, Droplets, Wind, Sun, Thermometer, CloudRain, MapPin } from "lucide-react";
 
 // Mock weather data - in production this would come from a weather API
 const weatherData = [
@@ -71,6 +71,10 @@ export function WeatherSection() {
           <p className="section-description">
             See how weather conditions affect commodity prices across major markets
           </p>
+          <div className="flex justify-center items-center gap-2 mt-4">
+            <MapPin className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground">Live data from major Indian cities</span>
+          </div>
         </div>
 
         {/* Weather Cards */}

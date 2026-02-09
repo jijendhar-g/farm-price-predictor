@@ -1,7 +1,10 @@
-import { TrendingUp, TrendingDown, Minus, Loader2, Package } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2, Package, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLatestPrices } from "@/hooks/useCommodities";
+import { useRealtimePriceData } from "@/hooks/useRealtimeData";
+import { LiveIndicator } from "@/components/ui/LiveIndicator";
 import { formatDistanceToNow } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CommodityCardProps {
   name: string;
@@ -62,8 +65,27 @@ function CommodityCard({ name, price, unit, change, changePercent, icon, mandiNa
   );
 }
 
+function PriceCardSkeleton() {
+  return (
+    <div className="card-interactive p-5">
+      <div className="flex items-start justify-between mb-3">
+        <Skeleton className="h-10 w-10 rounded-lg" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+      <Skeleton className="h-6 w-24 mb-1" />
+      <Skeleton className="h-4 w-20 mb-3" />
+      <Skeleton className="h-8 w-28" />
+      <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+        <Skeleton className="h-4 w-12" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+    </div>
+  );
+}
+
 export function PriceDashboard() {
-  const { data: commodities, isLoading, error } = useLatestPrices();
+  const { data: commodities, isLoading, error, refetch, isFetching } = useLatestPrices();
+  const { lastUpdate } = useRealtimePriceData();
 
   const lastUpdated = commodities?.[0]?.recordedAt
     ? formatDistanceToNow(new Date(commodities[0].recordedAt), { addSuffix: true })
@@ -84,19 +106,27 @@ export function PriceDashboard() {
           </p>
         </div>
 
-        {/* Last Updated */}
+        {/* Last Updated with Real-time indicator */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm">
-            <span className="h-2 w-2 rounded-full bg-price-up animate-pulse" />
+          <div className="inline-flex items-center gap-4 px-4 py-2 rounded-full bg-card border border-border text-sm">
+            <LiveIndicator lastUpdate={lastUpdate} />
             <span className="text-muted-foreground">Updated {lastUpdated}</span>
+            <button 
+              onClick={() => refetch()}
+              className="p-1 hover:bg-muted rounded-full transition-colors"
+              disabled={isFetching}
+            >
+              <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isFetching && "animate-spin")} />
+            </button>
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State with Skeletons */}
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading market data...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <PriceCardSkeleton key={i} />
+            ))}
           </div>
         )}
 
