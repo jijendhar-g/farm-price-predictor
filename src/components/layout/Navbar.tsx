@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Leaf, Menu, X, BarChart3, MessageSquare, ShoppingBag, Bell, LogOut, TrendingUp, Cloud, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,7 +16,6 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
@@ -76,11 +74,11 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
-                  Sign In
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="/auth">Sign In</a>
                 </Button>
-                <Button size="sm" className="btn-primary" onClick={() => navigate("/auth")}>
-                  Get Started
+                <Button size="sm" className="btn-primary" asChild>
+                  <a href="/auth">Get Started</a>
                 </Button>
               </>
             )}
@@ -122,11 +120,11 @@ export function Navbar() {
                 </Button>
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" className="flex-1" onClick={() => navigate("/auth")}>
-                    Sign In
+                  <Button variant="ghost" size="sm" className="flex-1" asChild>
+                    <a href="/auth">Sign In</a>
                   </Button>
-                  <Button size="sm" className="flex-1 btn-primary" onClick={() => navigate("/auth")}>
-                    Get Started
+                  <Button size="sm" className="flex-1 btn-primary" asChild>
+                    <a href="/auth">Get Started</a>
                   </Button>
                 </>
               )}
