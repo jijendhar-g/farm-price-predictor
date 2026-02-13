@@ -1,10 +1,13 @@
-import { TrendingUp, TrendingDown, Minus, Loader2, Package, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2, Package, RefreshCw, CloudDownload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLatestPrices } from "@/hooks/useCommodities";
 import { useRealtimePriceData } from "@/hooks/useRealtimeData";
 import { LiveIndicator } from "@/components/ui/LiveIndicator";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface CommodityCardProps {
   name: string;
@@ -86,6 +89,21 @@ function PriceCardSkeleton() {
 export function PriceDashboard() {
   const { data: commodities, isLoading, error, refetch, isFetching } = useLatestPrices();
   const { lastUpdate } = useRealtimePriceData();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ingest-prices");
+      if (error) throw error;
+      toast.success(`Synced ${data.records_inserted} price records from ${data.commodities_updated} commodities`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sync prices");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const lastUpdated = commodities?.[0]?.recordedAt
     ? formatDistanceToNow(new Date(commodities[0].recordedAt), { addSuffix: true })
@@ -115,8 +133,17 @@ export function PriceDashboard() {
               onClick={() => refetch()}
               className="p-1 hover:bg-muted rounded-full transition-colors"
               disabled={isFetching}
+              title="Refresh"
             >
               <RefreshCw className={cn("h-4 w-4 text-muted-foreground", isFetching && "animate-spin")} />
+            </button>
+            <button
+              onClick={handleSync}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+              disabled={syncing}
+            >
+              {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <CloudDownload className="h-3 w-3" />}
+              {syncing ? "Syncing…" : "Sync Prices"}
             </button>
           </div>
         </div>
