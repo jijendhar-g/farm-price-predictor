@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Leaf, Menu, X, BarChart3, MessageSquare, ShoppingBag, Bell, LogOut, TrendingUp, Cloud, Newspaper } from "lucide-react";
+import { Leaf, Menu, X, BarChart3, MessageSquare, ShoppingBag, Bell, LogOut, TrendingUp, Cloud, Newspaper, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Prices", href: "#dashboard", icon: BarChart3 },
   { label: "Predictions", href: "#predictions", icon: TrendingUp },
+  { label: "Model", href: "#model-training", icon: Brain },
   { label: "Weather", href: "#weather", icon: Cloud },
   { label: "News", href: "#news", icon: Newspaper },
   { label: "Marketplace", href: "#marketplace", icon: ShoppingBag },
