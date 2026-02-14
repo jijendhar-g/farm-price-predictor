@@ -100,6 +100,7 @@ export function useLatestPrices() {
             changePercent,
             mandiName: prices?.[0]?.mandi_name || "N/A",
             recordedAt: prices?.[0]?.recorded_at,
+            source: prices?.[0]?.source || null,
           };
         })
       );
