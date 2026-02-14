@@ -17,9 +17,10 @@ interface CommodityCardProps {
   changePercent: number;
   icon: string | null;
   mandiName?: string;
+  source?: string | null;
 }
 
-function CommodityCard({ name, price, unit, change, changePercent, icon, mandiName }: CommodityCardProps) {
+function CommodityCard({ name, price, unit, change, changePercent, icon, mandiName, source }: CommodityCardProps) {
   const isUp = change > 0;
   const isDown = change < 0;
   const isNeutral = change === 0;
@@ -45,7 +46,18 @@ function CommodityCard({ name, price, unit, change, changePercent, icon, mandiNa
 
       <h3 className="font-semibold text-lg text-foreground mb-1">{name}</h3>
       {mandiName && (
-        <p className="text-xs text-muted-foreground mb-3">{mandiName}</p>
+        <p className="text-xs text-muted-foreground mb-2">{mandiName}</p>
+      )}
+      {source && (
+        <span className={cn(
+          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium mb-3",
+          source === "data_gov_in"
+            ? "bg-price-up/10 text-price-up"
+            : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+        )}>
+          <span className={cn("h-1.5 w-1.5 rounded-full", source === "data_gov_in" ? "bg-price-up" : "bg-amber-500")} />
+          {source === "data_gov_in" ? "Live API" : "Simulated"}
+        </span>
       )}
 
       <div className="flex items-baseline gap-1">
@@ -181,6 +193,7 @@ export function PriceDashboard() {
                   changePercent={commodity.changePercent}
                   icon={commodity.icon}
                   mandiName={commodity.mandiName}
+                  source={commodity.source}
                 />
               </div>
             ))}
