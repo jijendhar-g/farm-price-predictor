@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -7,44 +6,96 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Realistic mandi data for Indian agricultural markets
+// data.gov.in resource ID for daily commodity prices (Agmarknet)
+const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
+
+// Map data.gov.in commodity names to our DB commodity names
+const COMMODITY_MAP: Record<string, string> = {
+  "Tomato": "Tomato",
+  "Potato": "Potato",
+  "Onion": "Onion",
+  "Rice": "Rice",
+  "Wheat": "Wheat",
+  "Apple": "Apple",
+  "Banana": "Banana",
+  "Mango": "Mango",
+  "Cabbage": "Cabbage",
+  "Carrot": "Carrot",
+  "Cauliflower": "Cauliflower",
+  "Green Chilli": "Green Chili",
+};
+
+// Fallback simulated data when API is unavailable
 const MANDIS = [
   { name: "Azadpur Mandi", location: "Delhi", state: "Delhi" },
   { name: "Vashi Market", location: "Navi Mumbai", state: "Maharashtra" },
   { name: "Koyambedu Market", location: "Chennai", state: "Tamil Nadu" },
   { name: "Bowenpally Market", location: "Hyderabad", state: "Telangana" },
   { name: "Yeshwanthpur APMC", location: "Bangalore", state: "Karnataka" },
-  { name: "Gultekdi Market", location: "Pune", state: "Maharashtra" },
-  { name: "Devi Ahilya Bai Mandi", location: "Indore", state: "Madhya Pradesh" },
-  { name: "Muhana Mandi", location: "Jaipur", state: "Rajasthan" },
 ];
 
-// Base price ranges per commodity (₹/kg or ₹/quintal)
 const BASE_PRICES: Record<string, { min: number; max: number }> = {
-  Tomato: { min: 15, max: 60 },
-  Potato: { min: 12, max: 35 },
-  Onion: { min: 18, max: 55 },
-  Rice: { min: 30, max: 50 },
-  Wheat: { min: 22, max: 38 },
-  Apple: { min: 80, max: 200 },
-  Banana: { min: 25, max: 60 },
-  Mango: { min: 40, max: 150 },
-  Cabbage: { min: 10, max: 30 },
-  Carrot: { min: 20, max: 50 },
-  Cauliflower: { min: 15, max: 45 },
-  "Green Chili": { min: 30, max: 100 },
+  Tomato: { min: 15, max: 60 }, Potato: { min: 12, max: 35 },
+  Onion: { min: 18, max: 55 }, Rice: { min: 30, max: 50 },
+  Wheat: { min: 22, max: 38 }, Apple: { min: 80, max: 200 },
+  Banana: { min: 25, max: 60 }, Mango: { min: 40, max: 150 },
+  Cabbage: { min: 10, max: 30 }, Carrot: { min: 20, max: 50 },
+  Cauliflower: { min: 15, max: 45 }, "Green Chili": { min: 30, max: 100 },
 };
 
-function generatePrice(commodityName: string, mandiIndex: number): number {
-  const range = BASE_PRICES[commodityName] || { min: 20, max: 60 };
-  // Add mandi-based variance (different markets have different prices)
-  const mandiVariance = (mandiIndex * 0.05 - 0.15);
-  const basePrice = range.min + Math.random() * (range.max - range.min);
-  const price = basePrice * (1 + mandiVariance + (Math.random() * 0.1 - 0.05));
-  return Math.max(range.min * 0.8, Math.round(price * 100) / 100);
+interface GovRecord {
+  commodity: string;
+  market: string;
+  district: string;
+  state: string;
+  modal_price: string;
+  min_price: string;
+  max_price: string;
+  arrival_date: string;
 }
 
-serve(async (req) => {
+async function fetchFromDataGovIn(apiKey: string): Promise<GovRecord[]> {
+  const commodities = Object.keys(COMMODITY_MAP).join("|");
+  const url = `https://api.data.gov.in/resource/${RESOURCE_ID}?api-key=${apiKey}&format=json&limit=500&filters[commodity]=${encodeURIComponent(commodities)}`;
+
+  console.log("Fetching from data.gov.in...");
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error(`data.gov.in responded ${response.status}: ${text}`);
+    throw new Error(`data.gov.in API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log(`Received ${data.records?.length || 0} records from data.gov.in`);
+  return data.records || [];
+}
+
+function generateFallbackData(commodities: { id: string; name: string }[]): any[] {
+  const now = new Date().toISOString();
+  const records: any[] = [];
+
+  for (const commodity of commodities) {
+    const shuffled = [...MANDIS].sort(() => Math.random() - 0.5).slice(0, 3);
+    for (const mandi of shuffled) {
+      const range = BASE_PRICES[commodity.name] || { min: 20, max: 60 };
+      const price = range.min + Math.random() * (range.max - range.min);
+      records.push({
+        commodity_id: commodity.id,
+        mandi_name: mandi.name,
+        mandi_location: mandi.location,
+        state: mandi.state,
+        price: Math.round(price * 100) / 100,
+        recorded_at: now,
+        source: "simulated_fallback",
+      });
+    }
+  }
+  return records;
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -53,46 +104,81 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const apiKey = Deno.env.get("DATA_GOV_IN_API_KEY");
 
-    // Fetch all commodities
+    // Fetch all commodities from DB
     const { data: commodities, error: comError } = await supabase
       .from("commodities")
       .select("id, name");
-
     if (comError) throw comError;
 
+    const commodityLookup = new Map(commodities.map((c: any) => [c.name.toLowerCase(), c.id]));
     const now = new Date().toISOString();
-    const records: any[] = [];
+    let records: any[] = [];
+    let source = "simulated_fallback";
 
-    for (const commodity of commodities) {
-      // Pick 3-5 random mandis per commodity
-      const shuffled = [...MANDIS].sort(() => Math.random() - 0.5);
-      const selectedMandis = shuffled.slice(0, 3 + Math.floor(Math.random() * 3));
+    // Try real API first
+    if (apiKey) {
+      try {
+        const govRecords = await fetchFromDataGovIn(apiKey);
 
-      for (const [idx, mandi] of selectedMandis.entries()) {
-        records.push({
-          commodity_id: commodity.id,
-          mandi_name: mandi.name,
-          mandi_location: mandi.location,
-          state: mandi.state,
-          price: generatePrice(commodity.name, idx),
-          recorded_at: now,
-          source: "agmarknet_sync",
-        });
+        if (govRecords.length > 0) {
+          source = "data_gov_in";
+          for (const rec of govRecords) {
+            const mappedName = COMMODITY_MAP[rec.commodity] || rec.commodity;
+            const commodityId = commodityLookup.get(mappedName.toLowerCase());
+            if (!commodityId) continue;
+
+            // data.gov.in prices are per quintal, convert to per kg
+            const modalPrice = parseFloat(rec.modal_price);
+            if (isNaN(modalPrice) || modalPrice <= 0) continue;
+
+            const pricePerKg = Math.round((modalPrice / 100) * 100) / 100;
+
+            records.push({
+              commodity_id: commodityId,
+              mandi_name: rec.market || "Unknown Market",
+              mandi_location: rec.district || null,
+              state: rec.state || null,
+              price: pricePerKg,
+              recorded_at: now,
+              source: "data_gov_in",
+            });
+          }
+          console.log(`Mapped ${records.length} records from data.gov.in`);
+        }
+      } catch (apiErr) {
+        console.warn("data.gov.in fetch failed, using fallback:", apiErr.message);
       }
     }
 
+    // Fallback to simulated data if no real data
+    if (records.length === 0) {
+      console.log("Using simulated fallback data");
+      records = generateFallbackData(commodities);
+    }
+
+    // Deduplicate: keep only one record per commodity+mandi (latest)
+    const dedupMap = new Map<string, any>();
+    for (const r of records) {
+      const key = `${r.commodity_id}_${r.mandi_name}`;
+      dedupMap.set(key, r);
+    }
+    const finalRecords = Array.from(dedupMap.values());
+
     const { error: insertError } = await supabase
       .from("price_data")
-      .insert(records);
-
+      .insert(finalRecords);
     if (insertError) throw insertError;
+
+    const uniqueCommodities = new Set(finalRecords.map((r: any) => r.commodity_id));
 
     return new Response(
       JSON.stringify({
         success: true,
-        records_inserted: records.length,
-        commodities_updated: commodities.length,
+        source,
+        records_inserted: finalRecords.length,
+        commodities_updated: uniqueCommodities.size,
         timestamp: now,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
