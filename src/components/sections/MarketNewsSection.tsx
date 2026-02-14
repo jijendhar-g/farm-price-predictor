@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Newspaper, Clock, ExternalLink, TrendingUp, Leaf, AlertCircle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +91,8 @@ function NewsCardSkeleton({ large = false }: { large?: boolean }) {
 
 export function MarketNewsSection() {
   const { lastUpdate } = useRealtimeNews();
+  const [countdown, setCountdown] = useState(30);
+  
   const { data: news, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["market_news"],
     queryFn: async () => {
@@ -102,7 +105,26 @@ export function MarketNewsSection() {
       if (error) throw error;
       return data && data.length > 0 ? data : fallbackNews;
     },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
+
+  // Countdown timer for next refresh
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Reset countdown on manual refetch
+  useEffect(() => {
+    if (isFetching) setCountdown(30);
+  }, [isFetching]);
 
   const displayNews = news || fallbackNews;
 
@@ -120,6 +142,9 @@ export function MarketNewsSection() {
           </p>
           <div className="flex justify-center items-center gap-4 mt-4">
             <LiveIndicator lastUpdate={lastUpdate} />
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Refreshing in {countdown}s
+            </span>
             <button 
               onClick={() => refetch()}
               className="p-2 hover:bg-muted rounded-full transition-colors"
