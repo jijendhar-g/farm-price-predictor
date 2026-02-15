@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Bot, User, Loader2, MessageSquare, RefreshCw, Sparkles, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAIChat } from "@/hooks/useAIChat";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -38,6 +39,12 @@ export function ChatbotSection() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const handleVoiceResult = useCallback((text: string) => {
+    setInputValue(text);
+    toast.success("Voice captured! Tap send or keep editing.");
+  }, []);
+
+  const { isListening, isSupported: micSupported, startListening, stopListening } = useSpeechRecognition(handleVoiceResult);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -223,12 +230,25 @@ export function ChatbotSection() {
             {/* Input */}
             <div className="p-4 border-t border-border bg-background">
               <div className="flex gap-3 items-end">
+                {micSupported && (
+                  <Button
+                    type="button"
+                    variant={isListening ? "destructive" : "outline"}
+                    size="icon"
+                    className={cn("rounded-xl h-12 w-12 flex-shrink-0", isListening && "animate-pulse")}
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={isLoading}
+                    title={isListening ? "Stop listening" : "Speak your query"}
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Button>
+                )}
                 <textarea
                   ref={textareaRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask about prices, predictions, or tips..."
+                  placeholder={isListening ? "Listening..." : "Ask about prices, predictions, or tips..."}
                   className="flex-1 resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-background min-h-[48px] max-h-[120px] transition-colors"
                   rows={1}
                   disabled={isLoading}
