@@ -62,6 +62,7 @@ export function usePredictions(commodityId?: string) {
       return data;
     },
     enabled: true,
+    refetchInterval: 60000, // Auto-refresh every 60 seconds
   });
 }
 

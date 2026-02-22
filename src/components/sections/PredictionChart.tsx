@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Brain, TrendingUp, TrendingDown, Loader2, Calendar, RefreshCw } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,8 +56,18 @@ export function PredictionChart() {
           <p className="section-description">
             LSTM neural network predictions for smarter trading decisions
           </p>
-          <div className="flex justify-center mt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
             <LiveIndicator lastUpdate={lastUpdate} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchPredictions()}
+              disabled={predictionsLoading}
+              className="text-xs"
+            >
+              <RefreshCw className={cn("h-3 w-3 mr-1", predictionsLoading && "animate-spin")} />
+              Refresh Predictions
+            </Button>
           </div>
         </div>
 
