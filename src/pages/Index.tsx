@@ -2,6 +2,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { PriceDashboard } from "@/components/sections/PriceDashboard";
 import { PredictionChart } from "@/components/sections/PredictionChart";
+import { HistoricalPriceChart } from "@/components/sections/HistoricalPriceChart";
 import { ModelTrainingPanel } from "@/components/sections/ModelTrainingPanel";
 import { WeatherSection } from "@/components/sections/WeatherSection";
 import { MarketNewsSection } from "@/components/sections/MarketNewsSection";
@@ -20,6 +21,7 @@ const Index = () => {
         <HeroSection />
         <PriceDashboard />
         <PredictionChart />
+        <HistoricalPriceChart />
         <ModelTrainingPanel />
         <WeatherSection />
         <MarketNewsSection />
