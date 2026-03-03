@@ -7,6 +7,7 @@ import { ModelTrainingPanel } from "@/components/sections/ModelTrainingPanel";
 import { WeatherSection } from "@/components/sections/WeatherSection";
 import { MarketNewsSection } from "@/components/sections/MarketNewsSection";
 import { PriceComparisonSection } from "@/components/sections/PriceComparisonSection";
+import { MandiComparisonTable } from "@/components/sections/MandiComparisonTable";
 import { ChatbotSection } from "@/components/sections/ChatbotSection";
 import { MarketplaceSection } from "@/components/sections/MarketplaceSection";
 import { PriceAlertsSection } from "@/components/sections/PriceAlertsSection";
@@ -26,6 +27,7 @@ const Index = () => {
         <WeatherSection />
         <MarketNewsSection />
         <PriceComparisonSection />
+        <MandiComparisonTable />
         <MarketplaceSection />
         <PriceAlertsSection />
         <FeaturesSection />
