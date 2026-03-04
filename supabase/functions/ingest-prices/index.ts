@@ -173,31 +173,96 @@ Deno.serve(async (req) => {
 
     const uniqueCommodities = new Set(finalRecords.map((r: any) => r.commodity_id));
 
-    // Generate fresh predictions for each commodity based on latest prices
+    // ─── LSTM-inspired forecasting using Exponential Smoothing with Trend (Holt's method) ───
+    // Fetches last 30 days of historical prices per commodity for proper time-series analysis
     const predictionRecords: any[] = [];
     for (const commodityId of uniqueCommodities) {
-      // Get latest prices for this commodity to base predictions on
-      const commodityPrices = finalRecords.filter((r: any) => r.commodity_id === commodityId);
-      const avgPrice = commodityPrices.reduce((sum: number, r: any) => sum + r.price, 0) / commodityPrices.length;
+      // Fetch historical prices (last 30 days) for this commodity
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Generate 7-day predictions with realistic variation
+      const { data: historicalPrices, error: histError } = await supabase
+        .from("price_data")
+        .select("price, recorded_at")
+        .eq("commodity_id", commodityId)
+        .gte("recorded_at", thirtyDaysAgo.toISOString())
+        .order("recorded_at", { ascending: true });
+
+      if (histError) {
+        console.error(`History fetch error for ${commodityId}:`, histError.message);
+      }
+
+      // Group by date and average to get daily prices
+      const dailyMap = new Map<string, number[]>();
+      const allPrices = [
+        ...(historicalPrices || []).map((p: any) => ({ price: p.price, recorded_at: p.recorded_at })),
+        ...finalRecords.filter((r: any) => r.commodity_id === commodityId).map((r: any) => ({ price: r.price, recorded_at: r.recorded_at })),
+      ];
+
+      for (const p of allPrices) {
+        const dateKey = new Date(p.recorded_at).toISOString().split("T")[0];
+        if (!dailyMap.has(dateKey)) dailyMap.set(dateKey, []);
+        dailyMap.get(dateKey)!.push(p.price);
+      }
+
+      const dailyAvgs = Array.from(dailyMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([, prices]) => prices.reduce((s, v) => s + v, 0) / prices.length);
+
+      if (dailyAvgs.length === 0) continue;
+
+      // ─── Holt's Linear Exponential Smoothing (Double Exponential Smoothing) ───
+      // This captures both level and trend in the time series, similar to what
+      // an LSTM learns but in a classical statistical framework.
+      const alpha = 0.3; // Level smoothing factor
+      const beta = 0.1;  // Trend smoothing factor
+
+      let level = dailyAvgs[0];
+      let trend = dailyAvgs.length > 1
+        ? (dailyAvgs[dailyAvgs.length - 1] - dailyAvgs[0]) / dailyAvgs.length
+        : 0;
+
+      // Train the smoother on historical data
+      for (let i = 1; i < dailyAvgs.length; i++) {
+        const prevLevel = level;
+        level = alpha * dailyAvgs[i] + (1 - alpha) * (prevLevel + trend);
+        trend = beta * (level - prevLevel) + (1 - beta) * trend;
+      }
+
+      // Calculate volatility from recent data for confidence scoring
+      const recentPrices = dailyAvgs.slice(-7);
+      const mean = recentPrices.reduce((s, v) => s + v, 0) / recentPrices.length;
+      const variance = recentPrices.reduce((s, v) => s + (v - mean) ** 2, 0) / recentPrices.length;
+      const volatility = Math.sqrt(variance) / mean; // coefficient of variation
+
+      // Generate 7-day forecasts
       for (let day = 1; day <= 7; day++) {
         const predDate = new Date();
         predDate.setDate(predDate.getDate() + day);
-        const trend = (Math.random() - 0.45) * 0.05; // slight upward bias
-        const noise = (Math.random() - 0.5) * 0.08;
-        const predictedPrice = Math.round(avgPrice * (1 + trend * day + noise) * 100) / 100;
-        const confidence = Math.round((0.88 + Math.random() * 0.10) * 100) / 100;
+
+        // Holt's forecast: level + trend * steps_ahead
+        const forecast = level + trend * day;
+        // Add small stochastic noise scaled to historical volatility
+        const noise = (Math.random() - 0.5) * 2 * volatility * forecast * 0.15;
+        const predictedPrice = Math.max(1, Math.round((forecast + noise) * 100) / 100);
+
+        // Confidence decreases with forecast horizon and increases with data stability
+        const baseConfidence = 0.95 - volatility * 2;
+        const horizonDecay = 0.02 * day;
+        const dataBonus = Math.min(0.05, dailyAvgs.length / 600);
+        const confidence = Math.round(Math.max(0.5, Math.min(0.99, baseConfidence - horizonDecay + dataBonus)) * 100) / 100;
 
         predictionRecords.push({
           commodity_id: commodityId,
           predicted_price: predictedPrice,
           prediction_date: predDate.toISOString().split("T")[0],
           prediction_horizon: "7_days",
-          model_version: "lstm_v2.1_live",
+          model_version: "holt_exp_smoothing_v1",
           confidence_score: confidence,
         });
       }
+
+      console.log(`📈 ${commodityId}: level=${level.toFixed(2)}, trend=${trend.toFixed(4)}, volatility=${(volatility*100).toFixed(1)}%, history=${dailyAvgs.length} days`);
     }
 
     // Delete old predictions and insert fresh ones
