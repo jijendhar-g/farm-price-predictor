@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, TrendingUp, TrendingDown, Loader2, Calendar, RefreshCw } from "lucide-react";
+import { Brain, TrendingUp, TrendingDown, Loader2, Calendar, RefreshCw, Info, BarChart3 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useCommodities, usePredictions, usePriceData } from "@/hooks/useCommodities";
 import { useRealtimePredictions } from "@/hooks/useRealtimeData";
 import { LiveIndicator } from "@/components/ui/LiveIndicator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 export function PredictionChart() {
@@ -43,6 +45,8 @@ export function PredictionChart() {
     ? (predictions.reduce((acc, p) => acc + (p.confidence_score || 0), 0) / predictions.length) * 100
     : 0;
 
+  const modelVersion = predictions?.[0]?.model_version || "unknown";
+
   return (
     <section id="predictions" className="py-16">
       <div className="container px-4">
@@ -54,7 +58,7 @@ export function PredictionChart() {
           </div>
           <h2 className="section-title">Price Forecasting</h2>
           <p className="section-description">
-            LSTM neural network predictions for smarter trading decisions
+            Holt's Exponential Smoothing on 30-day historical data for smarter trading decisions
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
             <LiveIndicator lastUpdate={lastUpdate} />
@@ -150,6 +154,43 @@ export function PredictionChart() {
                     {avgConfidence.toFixed(0)}%
                   </p>
                 </div>
+              </div>
+
+              {/* Algorithm Info Panel */}
+              <div className="card-elevated p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground">Algorithm: Holt's Double Exponential Smoothing</p>
+                      <Badge variant="outline" className="text-xs">{modelVersion}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Trained on 30 days of historical prices • Level (α=0.3) + Trend (β=0.1) decomposition
+                    </p>
+                  </div>
+                </div>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="shrink-0">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs text-xs leading-relaxed">
+                      <p className="font-semibold mb-1">How predictions work:</p>
+                      <ul className="list-disc pl-3 space-y-0.5">
+                        <li>Fetches last 30 days of daily average prices per commodity</li>
+                        <li>Decomposes into <strong>level</strong> (current baseline) and <strong>trend</strong> (direction)</li>
+                        <li>Forecast = level + trend × days ahead</li>
+                        <li>Confidence decreases with forecast horizon (−2%/day) and increases with price stability</li>
+                        <li>Volatility-scaled noise adds realistic variance</li>
+                      </ul>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
               </div>
 
               {/* Chart */}
