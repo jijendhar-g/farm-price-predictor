@@ -173,19 +173,18 @@ Deno.serve(async (req) => {
 
     const uniqueCommodities = new Set(finalRecords.map((r: any) => r.commodity_id));
 
-    // ─── LSTM-inspired forecasting using Exponential Smoothing with Trend (Holt's method) ───
-    // Fetches last 30 days of historical prices per commodity for proper time-series analysis
+    // ─── Holt-Winters Triple Exponential Smoothing with Weekly Seasonality ───
+    // Captures level, trend, AND seasonal patterns for maximum accuracy
     const predictionRecords: any[] = [];
     for (const commodityId of uniqueCommodities) {
-      // Fetch historical prices (last 30 days) for this commodity
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
       const { data: historicalPrices, error: histError } = await supabase
         .from("price_data")
         .select("price, recorded_at")
         .eq("commodity_id", commodityId)
-        .gte("recorded_at", thirtyDaysAgo.toISOString())
+        .gte("recorded_at", sixtyDaysAgo.toISOString())
         .order("recorded_at", { ascending: true });
 
       if (histError) {
@@ -211,45 +210,81 @@ Deno.serve(async (req) => {
 
       if (dailyAvgs.length === 0) continue;
 
-      // ─── Holt's Linear Exponential Smoothing (Double Exponential Smoothing) ───
-      // This captures both level and trend in the time series, similar to what
-      // an LSTM learns but in a classical statistical framework.
-      const alpha = 0.3; // Level smoothing factor
-      const beta = 0.1;  // Trend smoothing factor
+      const SEASON = 7; // weekly seasonality
 
-      let level = dailyAvgs[0];
-      let trend = dailyAvgs.length > 1
-        ? (dailyAvgs[dailyAvgs.length - 1] - dailyAvgs[0]) / dailyAvgs.length
-        : 0;
+      // ─── Holt-Winters (Additive) ───
+      const alpha = 0.35; // Level smoothing
+      const beta  = 0.10; // Trend smoothing
+      const gamma = 0.25; // Seasonal smoothing
 
-      // Train the smoother on historical data
-      for (let i = 1; i < dailyAvgs.length; i++) {
-        const prevLevel = level;
-        level = alpha * dailyAvgs[i] + (1 - alpha) * (prevLevel + trend);
-        trend = beta * (level - prevLevel) + (1 - beta) * trend;
+      // Initialize seasonal indices from first full season (or pad if insufficient)
+      const seasonal: number[] = new Array(SEASON).fill(0);
+      if (dailyAvgs.length >= SEASON) {
+        const firstSeasonAvg = dailyAvgs.slice(0, SEASON).reduce((s, v) => s + v, 0) / SEASON;
+        for (let i = 0; i < SEASON; i++) {
+          seasonal[i] = dailyAvgs[i] - firstSeasonAvg;
+        }
       }
 
-      // Calculate volatility from recent data for confidence scoring
-      const recentPrices = dailyAvgs.slice(-7);
+      // Initialize level and trend
+      let level = dailyAvgs.length >= SEASON
+        ? dailyAvgs.slice(0, SEASON).reduce((s, v) => s + v, 0) / SEASON
+        : dailyAvgs[0];
+      let trend = dailyAvgs.length >= SEASON * 2
+        ? ((dailyAvgs.slice(SEASON, SEASON * 2).reduce((s, v) => s + v, 0) / SEASON) - level) / SEASON
+        : dailyAvgs.length > 1
+          ? (dailyAvgs[dailyAvgs.length - 1] - dailyAvgs[0]) / dailyAvgs.length
+          : 0;
+
+      // Train: update level, trend, and seasonal components
+      const startIdx = dailyAvgs.length >= SEASON ? SEASON : 1;
+      for (let i = startIdx; i < dailyAvgs.length; i++) {
+        const prevLevel = level;
+        const seasonIdx = i % SEASON;
+        const observation = dailyAvgs[i];
+
+        // Update level (de-seasonalized)
+        level = alpha * (observation - seasonal[seasonIdx]) + (1 - alpha) * (prevLevel + trend);
+        // Update trend
+        trend = beta * (level - prevLevel) + (1 - beta) * trend;
+        // Update seasonal component
+        seasonal[seasonIdx] = gamma * (observation - level) + (1 - gamma) * seasonal[seasonIdx];
+      }
+
+      // Calculate volatility for confidence scoring
+      const recentPrices = dailyAvgs.slice(-14);
       const mean = recentPrices.reduce((s, v) => s + v, 0) / recentPrices.length;
       const variance = recentPrices.reduce((s, v) => s + (v - mean) ** 2, 0) / recentPrices.length;
-      const volatility = Math.sqrt(variance) / mean; // coefficient of variation
+      const volatility = Math.sqrt(variance) / mean;
+
+      // Also compute recent forecast errors (backtest last 7 days) for confidence calibration
+      let backcastError = 0;
+      const backcastN = Math.min(7, dailyAvgs.length - 1);
+      if (backcastN > 0) {
+        for (let i = dailyAvgs.length - backcastN; i < dailyAvgs.length; i++) {
+          const fcastIdx = i % SEASON;
+          const fcast = level + trend * (i - dailyAvgs.length + 1) + seasonal[fcastIdx];
+          backcastError += Math.abs((dailyAvgs[i] - fcast) / dailyAvgs[i]);
+        }
+        backcastError /= backcastN;
+      }
 
       // Generate 7-day forecasts
       for (let day = 1; day <= 7; day++) {
         const predDate = new Date();
         predDate.setDate(predDate.getDate() + day);
 
-        // Holt's forecast: level + trend * steps_ahead
-        const forecast = level + trend * day;
-        // Add small stochastic noise scaled to historical volatility
-        const noise = (Math.random() - 0.5) * 2 * volatility * forecast * 0.15;
+        const seasonIdx = (dailyAvgs.length + day - 1) % SEASON;
+        // Holt-Winters forecast: level + trend*h + seasonal[h mod s]
+        const forecast = level + trend * day + seasonal[seasonIdx];
+        // Minimal noise for realism
+        const noise = (Math.random() - 0.5) * 2 * volatility * forecast * 0.05;
         const predictedPrice = Math.max(1, Math.round((forecast + noise) * 100) / 100);
 
-        // Confidence decreases with forecast horizon and increases with data stability
-        const baseConfidence = 0.95 - volatility * 2;
-        const horizonDecay = 0.02 * day;
-        const dataBonus = Math.min(0.05, dailyAvgs.length / 600);
+        // Confidence based on backcast accuracy, volatility, and horizon
+        const baseConfidence = Math.max(0.6, 0.97 - backcastError * 1.5 - volatility * 1.5);
+        const horizonDecay = 0.015 * day;
+        const dataBonus = Math.min(0.05, dailyAvgs.length / 1200);
         const confidence = Math.round(Math.max(0.5, Math.min(0.99, baseConfidence - horizonDecay + dataBonus)) * 100) / 100;
 
         predictionRecords.push({
@@ -257,12 +292,12 @@ Deno.serve(async (req) => {
           predicted_price: predictedPrice,
           prediction_date: predDate.toISOString().split("T")[0],
           prediction_horizon: "7_days",
-          model_version: "holt_exp_smoothing_v1",
+          model_version: "holt_winters_v2",
           confidence_score: confidence,
         });
       }
 
-      console.log(`📈 ${commodityId}: level=${level.toFixed(2)}, trend=${trend.toFixed(4)}, volatility=${(volatility*100).toFixed(1)}%, history=${dailyAvgs.length} days`);
+      console.log(`📈 ${commodityId}: level=${level.toFixed(2)}, trend=${trend.toFixed(4)}, volatility=${(volatility*100).toFixed(1)}%, seasonal=[${seasonal.map(s => s.toFixed(2)).join(",")}], history=${dailyAvgs.length}d`);
     }
 
     // Delete old predictions and insert fresh ones

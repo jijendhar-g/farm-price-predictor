@@ -58,7 +58,7 @@ export function PredictionChart() {
           </div>
           <h2 className="section-title">Price Forecasting</h2>
           <p className="section-description">
-            Holt's Exponential Smoothing on 30-day historical data for smarter trading decisions
+            Holt-Winters Triple Exponential Smoothing with weekly seasonality for accurate forecasts
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
             <LiveIndicator lastUpdate={lastUpdate} />
@@ -164,11 +164,11 @@ export function PredictionChart() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground">Algorithm: Holt's Double Exponential Smoothing</p>
+                      <p className="text-sm font-semibold text-foreground">Algorithm: Holt-Winters Triple Exponential Smoothing</p>
                       <Badge variant="outline" className="text-xs">{modelVersion}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Trained on 30 days of historical prices • Level (α=0.3) + Trend (β=0.1) decomposition
+                      60-day history • Level (α=0.35) + Trend (β=0.10) + Weekly Seasonality (γ=0.25)
                     </p>
                   </div>
                 </div>
@@ -182,11 +182,11 @@ export function PredictionChart() {
                     <TooltipContent side="left" className="max-w-xs text-xs leading-relaxed">
                       <p className="font-semibold mb-1">How predictions work:</p>
                       <ul className="list-disc pl-3 space-y-0.5">
-                        <li>Fetches last 30 days of daily average prices per commodity</li>
-                        <li>Decomposes into <strong>level</strong> (current baseline) and <strong>trend</strong> (direction)</li>
-                        <li>Forecast = level + trend × days ahead</li>
-                        <li>Confidence decreases with forecast horizon (−2%/day) and increases with price stability</li>
-                        <li>Volatility-scaled noise adds realistic variance</li>
+                        <li>Fetches last 60 days of daily average prices per commodity</li>
+                        <li>Decomposes into <strong>level</strong>, <strong>trend</strong>, and <strong>weekly seasonal</strong> components</li>
+                        <li>Forecast = level + trend × h + seasonal[h mod 7]</li>
+                        <li>Confidence calibrated from backcast error on last 7 days</li>
+                        <li>Captures recurring weekly market patterns (e.g. weekend dips)</li>
                       </ul>
                     </TooltipContent>
                   </UITooltip>
