@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Leaf, Menu, X, BarChart3, MessageSquare, ShoppingBag, Bell, LogOut, TrendingUp, Cloud, Newspaper, Brain } from "lucide-react";
+import { Leaf, Menu, X, BarChart3, MessageSquare, ShoppingBag, Bell, LogOut, TrendingUp, Cloud, Newspaper, Brain, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -56,6 +56,9 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <a href="/admin" className="p-2 rounded-lg hover:bg-muted transition-colors" title="Admin Dashboard">
+                  <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
+                </a>
                 <a href="#alerts" className="p-2 rounded-lg hover:bg-muted transition-colors">
                   <Bell className="h-5 w-5 text-muted-foreground" />
                 </a>
