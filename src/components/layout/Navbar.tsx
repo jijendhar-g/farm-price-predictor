@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Leaf, Menu, X, BarChart3, MessageSquare, ShoppingBag, Bell, LogOut, TrendingUp, Cloud, Newspaper, Brain, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const navLinks = [
   { label: "Prices", href: "#dashboard", icon: BarChart3 },
