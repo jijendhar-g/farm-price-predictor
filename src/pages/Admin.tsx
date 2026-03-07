@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
-  LayoutDashboard, Package, Newspaper, ShoppingBag, BarChart3, RefreshCw,
-  Plus, Trash2, Edit, ArrowLeft, Loader2, CloudDownload, Users, TrendingUp,
-  Database, Activity
+  LayoutDashboard, Package, Newspaper, BarChart3, RefreshCw,
+  Plus, ArrowLeft, Loader2, CloudDownload, TrendingUp,
+  Database, Activity, ShieldAlert
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -50,11 +49,10 @@ function OverviewTab() {
     { label: "Price Records", value: stats?.prices, icon: BarChart3, color: "text-secondary" },
     { label: "Predictions", value: stats?.predictions, icon: TrendingUp, color: "text-accent-foreground" },
     { label: "News Articles", value: stats?.news, icon: Newspaper, color: "text-primary" },
-    { label: "Marketplace Listings", value: stats?.listings, icon: ShoppingBag, color: "text-secondary" },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((c) => (
         <Card key={c.label} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
           <CardContent className="p-6 flex items-center gap-4">
@@ -78,8 +76,6 @@ function OverviewTab() {
 function CommoditiesTab() {
   const [commodities, setCommodities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", category: "", unit: "kg", icon: "", name_hi: "", name_ta: "", name_te: "" });
 
   const load = async () => {
     setLoading(true);
@@ -90,11 +86,6 @@ function CommoditiesTab() {
 
   useEffect(() => { load(); }, []);
 
-  const resetForm = () => {
-    setForm({ name: "", category: "", unit: "kg", icon: "", name_hi: "", name_ta: "", name_te: "" });
-    setEditing(null);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -103,7 +94,6 @@ function CommoditiesTab() {
           <RefreshCw className={cn("h-4 w-4 mr-1", loading && "animate-spin")} /> Refresh
         </Button>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {commodities.map((c) => (
           <Card key={c.id} className="group hover:shadow-md transition-all duration-200 hover:border-primary/30">
@@ -145,11 +135,8 @@ function NewsTab() {
     if (!form.title || !form.content) return toast.error("Title and content required");
     setSubmitting(true);
     const { error } = await supabase.from("market_news").insert({
-      title: form.title,
-      content: form.content,
-      source: form.source || null,
-      category: form.category,
-      image_url: form.image_url || null,
+      title: form.title, content: form.content, source: form.source || null,
+      category: form.category, image_url: form.image_url || null,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -175,9 +162,7 @@ function NewsTab() {
 
       {adding && (
         <Card className="border-primary/30">
-          <CardHeader>
-            <CardTitle className="text-lg">New Article</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">New Article</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <Textarea placeholder="Content" rows={4} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
@@ -209,14 +194,12 @@ function NewsTab() {
       <div className="space-y-3">
         {articles.map((a) => (
           <Card key={a.id} className="group hover:shadow-md transition-all duration-200">
-            <CardContent className="p-4 flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground truncate">{a.title}</p>
-                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{a.content}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs">{a.category}</Badge>
-                  {a.source && <span className="text-xs text-muted-foreground">{a.source}</span>}
-                </div>
+            <CardContent className="p-4">
+              <p className="font-semibold text-foreground truncate">{a.title}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{a.content}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="outline" className="text-xs">{a.category}</Badge>
+                {a.source && <span className="text-xs text-muted-foreground">{a.source}</span>}
               </div>
             </CardContent>
           </Card>
@@ -246,50 +229,46 @@ function DataSyncTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CloudDownload className="h-5 w-5 text-primary" />
-            Price Data Sync
-          </CardTitle>
-          <CardDescription>
-            Trigger a manual sync from data.gov.in API. Prices and predictions will be refreshed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button onClick={handleSync} disabled={syncing} size="lg" className="w-full sm:w-auto">
-            {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CloudDownload className="h-4 w-4 mr-2" />}
-            {syncing ? "Syncing Data…" : "Sync Now"}
-          </Button>
-
-          {lastResult && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t">
-              {[
-                { label: "Records Inserted", value: lastResult.records_inserted },
-                { label: "Predictions Generated", value: lastResult.predictions_generated },
-                { label: "Commodities Updated", value: lastResult.commodities_updated },
-                { label: "Data Source", value: lastResult.source === "data_gov_in" ? "Live API" : "Simulated" },
-              ].map((s) => (
-                <div key={s.label} className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-lg font-bold text-foreground">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CloudDownload className="h-5 w-5 text-primary" />
+          Price Data Sync
+        </CardTitle>
+        <CardDescription>Trigger a manual sync. Prices and predictions will be refreshed.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button onClick={handleSync} disabled={syncing} size="lg" className="w-full sm:w-auto">
+          {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CloudDownload className="h-4 w-4 mr-2" />}
+          {syncing ? "Syncing Data…" : "Sync Now"}
+        </Button>
+        {lastResult && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t">
+            {[
+              { label: "Records Inserted", value: lastResult.records_inserted },
+              { label: "Predictions Generated", value: lastResult.predictions_generated },
+              { label: "Commodities Updated", value: lastResult.commodities_updated },
+              { label: "Data Source", value: lastResult.source === "data_gov_in" ? "Live API" : "Simulated" },
+            ].map((s) => (
+              <div key={s.label} className="text-center p-3 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold text-foreground">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
 // ─── Main Admin Page ───
 export default function Admin() {
   const { user, isLoading } = useAuth();
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  if (isLoading) {
+  if (isLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -304,8 +283,23 @@ export default function Admin() {
           <CardContent className="p-8 text-center space-y-4">
             <LayoutDashboard className="h-12 w-12 text-muted-foreground mx-auto" />
             <h2 className="text-xl font-bold text-foreground">Admin Access Required</h2>
-            <p className="text-muted-foreground">Please sign in to access the admin dashboard.</p>
-            <Button onClick={() => navigate("/auth")} className="w-full">Sign In</Button>
+            <p className="text-muted-foreground">Please sign in as an admin to access this dashboard.</p>
+            <Button onClick={() => navigate("/auth?type=admin")} className="w-full">Sign In as Admin</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="max-w-md w-full mx-4">
+          <CardContent className="p-8 text-center space-y-4">
+            <ShieldAlert className="h-12 w-12 text-destructive mx-auto" />
+            <h2 className="text-xl font-bold text-foreground">Access Denied</h2>
+            <p className="text-muted-foreground">Your account does not have admin privileges. Contact an administrator for access.</p>
+            <Button onClick={() => navigate("/")} variant="outline" className="w-full">Back to Home</Button>
           </CardContent>
         </Card>
       </div>
@@ -314,7 +308,6 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Bar */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container px-4 flex h-14 items-center justify-between">
           <div className="flex items-center gap-3">
@@ -331,16 +324,13 @@ export default function Admin() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs hidden sm:flex">
-              <Activity className="h-3 w-3 mr-1" />
-              {user.email}
-            </Badge>
-          </div>
+          <Badge variant="outline" className="text-xs hidden sm:flex">
+            <Activity className="h-3 w-3 mr-1" />
+            {user.email}
+          </Badge>
         </div>
       </header>
 
-      {/* Content */}
       <main className="container px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid grid-cols-4 w-full max-w-xl mx-auto">
