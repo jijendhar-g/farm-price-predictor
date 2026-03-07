@@ -58,9 +58,11 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <a href="/admin" className="p-2 rounded-lg hover:bg-muted transition-colors" title="Admin Dashboard">
-                  <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
-                </a>
+                {isAdmin && (
+                  <a href="/admin" className="p-2 rounded-lg hover:bg-muted transition-colors" title="Admin Dashboard">
+                    <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
+                  </a>
+                )}
                 <a href="#alerts" className="p-2 rounded-lg hover:bg-muted transition-colors">
                   <Bell className="h-5 w-5 text-muted-foreground" />
                 </a>
