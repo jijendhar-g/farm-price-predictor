@@ -14,20 +14,34 @@ import { PriceAlertsSection } from "@/components/sections/PriceAlertsSection";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
 import { Footer } from "@/components/layout/Footer";
 
+function SectionDivider() {
+  return (
+    <div className="flex items-center justify-center py-2">
+      <div className="h-px w-16 bg-gradient-to-r from-transparent via-border to-transparent" />
+      <div className="mx-3 h-1.5 w-1.5 rounded-full bg-primary/30" />
+      <div className="h-px w-16 bg-gradient-to-r from-transparent via-border to-transparent" />
+    </div>
+  );
+}
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main>
+      <main className="overflow-hidden">
         <HeroSection />
         <PriceDashboard />
+        <SectionDivider />
         <PredictionChart />
         <HistoricalPriceChart />
+        <SectionDivider />
         <ModelTrainingPanel />
         <WeatherSection />
+        <SectionDivider />
         <MarketNewsSection />
         <PriceComparisonSection />
         <MandiComparisonTable />
+        <SectionDivider />
         <MarketplaceSection />
         <PriceAlertsSection />
         <FeaturesSection />
