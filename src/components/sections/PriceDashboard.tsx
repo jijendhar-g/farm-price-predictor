@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 interface CommodityCardProps {
   name: string;
@@ -129,11 +130,19 @@ export function PriceDashboard() {
     ? formatDistanceToNow(new Date(commodities[0].recordedAt), { addSuffix: true })
     : "recently";
 
+  const { ref: headerRef, isVisible: headerVisible } = useScrollReveal();
+
   return (
     <section id="dashboard" className="py-16 bg-muted/30">
       <div className="container px-4">
         {/* Section Header */}
-        <div className="section-header">
+        <div
+          ref={headerRef}
+          className={cn(
+            "section-header transition-all duration-700",
+            headerVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+          )}
+        >
           <div className="badge-primary mb-4">
             <span className="h-2 w-2 rounded-full bg-price-up animate-pulse" />
             Live Market Data
