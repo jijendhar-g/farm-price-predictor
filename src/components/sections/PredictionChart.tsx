@@ -58,7 +58,7 @@ export function PredictionChart() {
           </div>
           <h2 className="section-title">Price Forecasting</h2>
           <p className="section-description">
-            Holt-Winters Triple Exponential Smoothing with weekly seasonality for accurate forecasts
+            AI-powered LSTM neural network with historical trend analysis for accurate forecasts
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
             <LiveIndicator lastUpdate={lastUpdate} />
