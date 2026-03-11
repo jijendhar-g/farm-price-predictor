@@ -164,11 +164,11 @@ export function PredictionChart() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground">Algorithm: Holt-Winters Triple Exponential Smoothing</p>
+                      <p className="text-sm font-semibold text-foreground">Algorithm: AI-Powered LSTM Neural Network</p>
                       <Badge variant="outline" className="text-xs">{modelVersion}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      60-day history • Level (α=0.35) + Trend (β=0.10) + Weekly Seasonality (γ=0.25)
+                      60-day history • Multivariate LSTM (64→128 units) • Trend + Momentum + Seasonality Analysis
                     </p>
                   </div>
                 </div>
