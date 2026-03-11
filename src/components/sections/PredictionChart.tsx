@@ -180,13 +180,13 @@ export function PredictionChart() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="max-w-xs text-xs leading-relaxed">
-                      <p className="font-semibold mb-1">How predictions work:</p>
-                      <ul className="list-disc pl-3 space-y-0.5">
-                        <li>Fetches last 60 days of daily average prices per commodity</li>
-                        <li>Decomposes into <strong>level</strong>, <strong>trend</strong>, and <strong>weekly seasonal</strong> components</li>
-                        <li>Forecast = level + trend × h + seasonal[h mod 7]</li>
-                        <li>Confidence calibrated from backcast error on last 7 days</li>
-                        <li>Captures recurring weekly market patterns (e.g. weekend dips)</li>
+                       <p className="font-semibold mb-1">How LSTM predictions work:</p>
+                       <ul className="list-disc pl-3 space-y-0.5">
+                        <li>Fetches last 60 days of historical prices per commodity</li>
+                        <li>AI analyzes <strong>trend</strong>, <strong>momentum</strong>, and <strong>seasonal patterns</strong></li>
+                        <li>LSTM neural network processes multivariate sequences (price, demand, season)</li>
+                        <li>Predicts next-day price with confidence scoring</li>
+                        <li>Adapts to market volatility and recurring patterns automatically</li>
                       </ul>
                     </TooltipContent>
                   </UITooltip>
